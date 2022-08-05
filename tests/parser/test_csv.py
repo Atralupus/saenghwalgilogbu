@@ -10,5 +10,5 @@ cav_sample = os.path.join(DATA_DIR, "parser/csv_sample.csv")
 def test_parse():
     parser = CSVParser()
 
-    r = parser.parse(cav_sample)
-    raise
+    for row in parser.parse(cav_sample):
+        assert row["이름"] == "홍길동"
