@@ -1,9 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import Dict, Tuple, List
 
 
 NameDict = Dict[str, List[Tuple[datetime, str]]]
+ExceptionDict = Dict[str, Tuple[datetime, datetime]]
+
+
+class StopLoop(Exception):
+    pass
 
 
 def append_dict_list(k, v, *, d: dict):
@@ -15,8 +20,9 @@ def append_dict_list(k, v, *, d: dict):
 
 
 class TardyChecker:
-    def __init__(self):
+    def __init__(self, exception_map: ExceptionDict = {}):
         self._name_dict: NameDict = dict()
+        self.exception_map: ExceptionDict = exception_map
 
     @property
     def name_dict(self) -> NameDict:
@@ -61,44 +67,70 @@ class TardyChecker:
             )
 
         result = {}
+
         for k in intermediate.keys():
-            v = intermediate[k]
-            v.sort(key=lambda x: x[0])
+            try:
+                v = intermediate[k]
+                v.sort(key=lambda x: x[0])
 
-            start = None
-            end = None
+                start = None
+                end = None
 
-            for issued_datetime, status in v:
-                if "출근" in status:
-                    if not start:
-                        start = issued_datetime
-                elif "퇴근" in status:
-                    end = issued_datetime
+                for issued_datetime, status in v:
+                    if "출근" in status:
+                        if not start:
+                            start = issued_datetime
+                    elif "퇴근" in status:
+                        end = issued_datetime
 
-            print(f"{k}일: 출근 {start} 퇴근 {end}")
+                print(f"{k}일: 출근 {start} 퇴근 {end}")
 
-            issued_date = k.strftime("%Y-%m-%d")
-            if not start or not end:
-                result[issued_date] = "출퇴근 기록 부족"
-            else:
-                required_start_time = start.replace(hour=10, minute=0)
-                required_end_time = start.replace(hour=19, minute=0)
+                issued_date = k.strftime("%Y-%m-%d")
+                if not start or not end:
+                    result[issued_date] = "출퇴근 기록 부족"
+                else:
+                    exception_time = self.exception_map.get(issued_date)
 
-                start_tardy = (
-                    start - required_start_time
-                ).total_seconds() / 60
-                end_tardy = (required_end_time - end).total_seconds() / 60
+                    if exception_time:
+                        (
+                            exception_start_time,
+                            exception_end_time,
+                        ) = exception_time
+                        if (
+                            exception_start_time is None
+                            or exception_end_time is None
+                        ):
+                            raise StopLoop
 
-                tardy_time: int = 0
+                        required_start_time = start.replace(
+                            hour=exception_start_time.hour,
+                            minute=exception_start_time.minute,
+                        )
+                        required_end_time = start.replace(
+                            hour=exception_start_time.hour,
+                            minute=exception_start_time.minute,
+                        )
+                    else:
+                        required_start_time = start.replace(hour=10, minute=0)
+                        required_end_time = start.replace(hour=19, minute=0)
 
-                if start_tardy > 0:
-                    tardy_time += int(start_tardy)
+                    start_tardy = (
+                        start - required_start_time
+                    ).total_seconds() / 60
+                    end_tardy = (required_end_time - end).total_seconds() / 60
 
-                if end_tardy > 0:
-                    tardy_time += int(end_tardy)
+                    tardy_time: int = 0
 
-                if tardy_time > 0:
-                    result[issued_date] = tardy_time
+                    if start_tardy > 0:
+                        tardy_time += int(start_tardy)
+
+                    if end_tardy > 0:
+                        tardy_time += int(end_tardy)
+
+                    if tardy_time > 0:
+                        result[issued_date] = tardy_time
+            except StopLoop:
+                pass
 
         return result
 
