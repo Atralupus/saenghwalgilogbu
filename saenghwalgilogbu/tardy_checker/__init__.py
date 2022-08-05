@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from typing import Dict, Tuple, List
 
@@ -81,13 +81,24 @@ class TardyChecker:
             if not start or not end:
                 result[issued_date] = "출퇴근 기록 부족"
             else:
-                work_hour = end - start
-                tardy_time = (
-                    work_hour - timedelta(hours=9)
-                ).total_seconds() / 60
+                required_start_time = start.replace(hour=10, minute=0)
+                required_end_time = start.replace(hour=19, minute=0)
 
-                if tardy_time < 0:
-                    result[issued_date] = abs(int(tardy_time))
+                start_tardy = (
+                    start - required_start_time
+                ).total_seconds() / 60
+                end_tardy = (required_end_time - end).total_seconds() / 60
+
+                tardy_time: int = 0
+
+                if start_tardy > 0:
+                    tardy_time += int(start_tardy)
+
+                if end_tardy > 0:
+                    tardy_time += int(end_tardy)
+
+                if tardy_time > 0:
+                    result[issued_date] = tardy_time
 
         return result
 

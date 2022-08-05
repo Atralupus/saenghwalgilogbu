@@ -1,4 +1,3 @@
-from tabnanny import check
 from saenghwalgilogbu.tardy_checker import TardyChecker
 from datetime import datetime
 
@@ -43,3 +42,29 @@ def test_check_no_tardy():
     r = checker.check("홍길동")
 
     assert r == {}
+
+
+def test_check_ten2seven():
+    checker = TardyChecker()
+
+    v = {"발생시각": "2022-08-03 10:00:00", "상태": "출근", "이름": "홍길동"}
+    checker.append(v)
+    v = {"발생시각": "2022-08-03 19:00:00", "상태": "퇴근", "이름": "홍길동"}
+    checker.append(v)
+
+    r = checker.check("홍길동")
+
+    assert r == {}
+
+
+def test_check_nine2six():
+    checker = TardyChecker()
+
+    v = {"발생시각": "2022-08-03 09:00:00", "상태": "출근", "이름": "홍길동"}
+    checker.append(v)
+    v = {"발생시각": "2022-08-03 18:00:00", "상태": "퇴근", "이름": "홍길동"}
+    checker.append(v)
+
+    r = checker.check("홍길동")
+
+    assert r == {"2022-08-03": 60}
