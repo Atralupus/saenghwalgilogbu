@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Optional
+
+from saenghwalgilogbu.builder import build_csv
 from saenghwalgilogbu.parser import CSVParser
 from saenghwalgilogbu.tardy_checker import TardyChecker
-from datetime import datetime
 
 
 def main(
@@ -39,8 +41,5 @@ def main(
 
     r = tardy_checker.check(name)
 
-    print()
-    print("지각 날짜")
-
-    for k, v in r.items():
-        print(f"{k}일 {v}")
+    with open(f"./output/{name}.csv", mode="w") as f:
+        f.write(build_csv(name, r))
