@@ -13,6 +13,7 @@ setup(
     ),
     python_requires=">=3.6",
     install_requires=[
+        "typer[all]~=0.6.1",
     ],
     classifiers=[
         "Programming Language :: Python",
