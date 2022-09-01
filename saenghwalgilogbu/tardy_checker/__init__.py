@@ -92,16 +92,18 @@ class TardyChecker:
                         end = issued_datetime
 
                 issued_date = k.strftime("%Y-%m-%d")
-                if not start:
-                    result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
-                        -1,
-                        "출근 기록 부족",
-                    )
-                elif not end:
-                    result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
-                        -1,
-                        "퇴근 기록 부족",
-                    )
+
+                if not start or not end:
+                    if end:
+                        result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            -1,
+                            "출근 기록 부족",
+                        )
+                    if start:
+                        result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            -1,
+                            "퇴근 기록 부족",
+                        )
                 else:
                     exception_time = self.exception_map.get(issued_date)
 
