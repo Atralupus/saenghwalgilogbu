@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from typing import Dict, Tuple, List
 
 
 NameDict = Dict[str, List[Tuple[datetime, str]]]
 ExceptionDict = Dict[str, Tuple[datetime, datetime]]
+ResultDict = Dict[str, Tuple[int, str]]
 
 
 class StopLoop(Exception):
@@ -39,16 +40,20 @@ class TardyChecker:
         self._row_validation(row)
 
         name = row["이름"]
-        issued_datetime = row["발생시각"]
+        raw_issued_datetime = row["발생시각"]
         status = row["상태"]
 
         issued_datetime = datetime.strptime(
-            issued_datetime, "%Y-%m-%d %H:%M:%S"
+            raw_issued_datetime, "%Y-%m-%d %H:%M:%S"
         )
 
-        append_dict_list(name, (issued_datetime, status), d=self._name_dict)
+        append_dict_list(
+            name,
+            (issued_datetime, status),
+            d=self._name_dict,
+        )
 
-    def check(self, name: str):
+    def check(self, name: str) -> ResultDict:
         """
         Start tardy check
 
@@ -58,15 +63,18 @@ class TardyChecker:
 
         v = self.name_dict[name]
 
-        intermediate: Dict[datetime, List[Tuple[datetime, str]]] = {}
+        intermediate: Dict[date, List[Tuple[datetime, str]]] = {}
         for issued_datetime, status in v:
             append_dict_list(
                 issued_datetime.date(),
-                (issued_datetime, status),
+                (
+                    issued_datetime,
+                    status,
+                ),
                 d=intermediate,
             )
 
-        result = {}
+        result: ResultDict = {}
 
         for k in intermediate.keys():
             try:
@@ -83,11 +91,19 @@ class TardyChecker:
                     elif "퇴근" in status:
                         end = issued_datetime
 
-                print(f"{k}일: 출근 {start} 퇴근 {end}")
-
                 issued_date = k.strftime("%Y-%m-%d")
+
                 if not start or not end:
-                    result[issued_date] = "출퇴근 기록 부족"
+                    if end:
+                        result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            -1,
+                            "출근 기록 부족",
+                        )
+                    if start:
+                        result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            -1,
+                            "퇴근 기록 부족",
+                        )
                 else:
                     exception_time = self.exception_map.get(issued_date)
 
@@ -119,16 +135,17 @@ class TardyChecker:
                     ).total_seconds() / 60
                     end_tardy = (required_end_time - end).total_seconds() / 60
 
-                    tardy_time: int = 0
-
                     if start_tardy > 0:
-                        tardy_time += int(start_tardy)
+                        result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            int(start_tardy),
+                            "지각",
+                        )
 
                     if end_tardy > 0:
-                        tardy_time += int(end_tardy)
-
-                    if tardy_time > 0:
-                        result[issued_date] = tardy_time
+                        result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
+                            int(end_tardy),
+                            "조퇴",
+                        )
             except StopLoop:
                 pass
 

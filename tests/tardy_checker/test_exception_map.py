@@ -33,7 +33,7 @@ def test_check_tardy_exception_map():
 
     r = checker.check("홍길동")
 
-    assert r == {"2022-09-03": 30}
+    assert r == {"2022-09-03 10:00:00": (30, "지각")}
 
 
 def test_check_vacation_exception_map():
