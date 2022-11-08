@@ -122,7 +122,7 @@ class TardyChecker:
                     )
                 else:result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         0,
-                        "출근",
+                        start[1],
                     )
                     
                 if end_tardy > 0:
@@ -133,7 +133,7 @@ class TardyChecker:
                 else:
                     result[end[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         0,
-                        "퇴근",
+                        end[1],
                     )                    
 
             except StopLoop:
