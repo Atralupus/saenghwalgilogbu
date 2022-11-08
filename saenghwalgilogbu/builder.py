@@ -6,12 +6,12 @@ def build_csv(name: str, r: dict):
     for k, v in r.items():
         print(f"{k} {v}")
 
-        m, text = v
+        m, text, stat = v
 
         if "부족" in text:
             sheet += f"{name},{k},,{text}\n"
-        elif "지각" in text or '조퇴' in text:
-            sheet += f"{name},{k},{text_map[text]},{m}분 {text}\n"
+        elif "지각" in stat or '조퇴' in stat:
+            sheet += f"{name},{k},{text},{m}분 {stat}\n"
         else:
             sheet += f"{name},{k},{text},\n"
 

@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List
 
 NameDict = Dict[str, List[Tuple[datetime, str]]]
 ExceptionDict = Dict[str, Tuple[datetime, datetime]]
-ResultDict = Dict[str, Tuple[int, str]]
+ResultDict = Dict[str, Tuple[int, str, str]]
 
 
 class StopLoop(Exception):
@@ -80,7 +80,7 @@ class TardyChecker:
             try:
                 v = intermediate[k]
                 v.sort(key=lambda x: x[0])
-
+                
                 start = v[0]
                 end = v[-1]
 
@@ -118,22 +118,27 @@ class TardyChecker:
                 if start_tardy > 0:
                     result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         int(start_tardy),
-                        "지각",
+                        start[1],
+                        "지각"
                     )
-                else:result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
+                else:
+                    result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         0,
                         start[1],
+                        ""
                     )
                     
                 if end_tardy > 0:
                     result[end[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         int(end_tardy),
-                        "조퇴",
+                        end[1],
+                        "조퇴"
                     )
                 else:
                     result[end[0].strftime("%Y-%m-%d %H:%M:%S")] = (
                         0,
                         end[1],
+                        ""
                     )                    
 
             except StopLoop:
