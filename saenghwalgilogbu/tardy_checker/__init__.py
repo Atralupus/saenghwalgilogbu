@@ -81,71 +81,61 @@ class TardyChecker:
                 v = intermediate[k]
                 v.sort(key=lambda x: x[0])
 
-                start = None
-                end = None
-
-                for issued_datetime, status in v:
-                    if "출근" in status:
-                        if not start:
-                            start = issued_datetime
-                    elif "퇴근" in status:
-                        end = issued_datetime
+                start = v[0]
+                end = v[-1]
 
                 issued_date = k.strftime("%Y-%m-%d")
 
-                if not start or not end:
-                    if end:
-                        result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
-                            -1,
-                            "출근 기록 부족",
-                        )
-                    if start:
-                        result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
-                            -1,
-                            "퇴근 기록 부족",
-                        )
+                exception_time = self.exception_map.get(issued_date)
+
+                if exception_time:
+                    (
+                        exception_start_time,
+                        exception_end_time,
+                    ) = exception_time
+                    if (
+                        exception_start_time is None
+                        or exception_end_time is None
+                    ):
+                        raise StopLoop
+                    required_start_time = start.replace(
+                        hour=exception_start_time.hour,
+                        minute=exception_start_time.minute,
+                    )
+                    required_end_time = start.replace(
+                        hour=exception_start_time.hour,
+                        minute=exception_start_time.minute,
+                    )
                 else:
-                    exception_time = self.exception_map.get(issued_date)
+                    required_start_time = start[0].replace(hour=10, minute=0)
+                    required_end_time = start[0].replace(hour=19, minute=0)
+                start_tardy = (
+                    start[0] - required_start_time
+                ).total_seconds() / 60
+                end_tardy = (
+                    required_end_time - end[0]
+                ).total_seconds() / 60
+                if start_tardy > 0:
+                    result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
+                        int(start_tardy),
+                        "지각",
+                    )
+                else:result[start[0].strftime("%Y-%m-%d %H:%M:%S")] = (
+                        0,
+                        "출근",
+                    )
+                    
+                if end_tardy > 0:
+                    result[end[0].strftime("%Y-%m-%d %H:%M:%S")] = (
+                        int(end_tardy),
+                        "조퇴",
+                    )
+                else:
+                    result[end[0].strftime("%Y-%m-%d %H:%M:%S")] = (
+                        0,
+                        "퇴근",
+                    )                    
 
-                    if exception_time:
-                        (
-                            exception_start_time,
-                            exception_end_time,
-                        ) = exception_time
-                        if (
-                            exception_start_time is None
-                            or exception_end_time is None
-                        ):
-                            raise StopLoop
-
-                        required_start_time = start.replace(
-                            hour=exception_start_time.hour,
-                            minute=exception_start_time.minute,
-                        )
-                        required_end_time = start.replace(
-                            hour=exception_start_time.hour,
-                            minute=exception_start_time.minute,
-                        )
-                    else:
-                        required_start_time = start.replace(hour=10, minute=0)
-                        required_end_time = start.replace(hour=19, minute=0)
-
-                    start_tardy = (
-                        start - required_start_time
-                    ).total_seconds() / 60
-                    end_tardy = (required_end_time - end).total_seconds() / 60
-
-                    if start_tardy > 0:
-                        result[start.strftime("%Y-%m-%d %H:%M:%S")] = (
-                            int(start_tardy),
-                            "지각",
-                        )
-
-                    if end_tardy > 0:
-                        result[end.strftime("%Y-%m-%d %H:%M:%S")] = (
-                            int(end_tardy),
-                            "조퇴",
-                        )
             except StopLoop:
                 pass
 
